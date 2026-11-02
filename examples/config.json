@@ -1,0 +1,7 @@
+{
+  "listen_socket": "./fluxd.sock",
+  "state_dir": "./fluxd-state",
+  "backend": "ccsds-123",
+  "replay_file": "optical.raw",
+  "metadata_file": "optical.json"
+}

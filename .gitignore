@@ -1,0 +1,52 @@
+# Build outputs and local Go caches
+/orbitald
+/fluxd
+/fluxctl
+/fluxbench
+/bin/
+/.gocache/
+/.gomodcache/
+*.test
+*.exe
+/go.work
+/go.work.sum
+
+# Generated test, profiling, and benchmark output
+/coverage.out
+/coverage.html
+*.prof
+*.pprof
+/benchmark.jsonl
+/benchmarks/local-baseline/
+
+# Generated replay fixtures and daemon state
+/optical.raw
+/optical.json
+/thermal.raw
+/thermal.json
+/fluxd-state/
+/fluxd.sock
+
+# Local environment and credentials (keep templates available)
+.env
+.env.*
+!.env.example
+!.env.sample
+!.env.template
+/.aws/
+
+# Python helper caches
+__pycache__/
+*.py[cod]
+.venv/
+
+# Editor and operating system files
+.idea/
+.vscode/
+.DS_Store
+._*
+Thumbs.db
+Desktop.ini
+*.swp
+*.swo
+*~

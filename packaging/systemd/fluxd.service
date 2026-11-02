@@ -1,0 +1,24 @@
+[Unit]
+Description=Local EO data pipeline
+After=local-fs.target
+
+[Service]
+Type=simple
+User=fluxd
+Group=fluxd
+RuntimeDirectory=fluxd
+RuntimeDirectoryMode=0700
+StateDirectory=fluxd
+StateDirectoryMode=0700
+ExecStart=/usr/local/bin/fluxd -config /etc/fluxd/config.json
+Restart=on-failure
+RestartSec=5
+UMask=0077
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/var/lib/fluxd /run/fluxd
+
+[Install]
+WantedBy=multi-user.target

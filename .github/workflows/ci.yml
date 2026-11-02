@@ -1,0 +1,25 @@
+name: ci
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.x'
+          cache: false
+      - run: go mod download && go mod verify
+      - run: make build lint test test-race test-cover cross
+      - run: go test ./internal/metadata -run '^$' -fuzz FuzzMetadata -fuzztime 5s
+      - run: go test ./internal/transport -run '^$' -fuzz FuzzFrame -fuzztime 5s
+      - run: go test ./internal/compression -run '^$' -fuzz FuzzCCSDSDecode -fuzztime 5s
+      - run: go test ./internal/compression/ccsds123 -run '^$' -fuzz FuzzHeader -fuzztime 5s
+      - run: go test ./internal/compression/ccsds123 -run '^$' -fuzz FuzzDecode -fuzztime 5s
+      - run: go test -run '^$' -bench . -benchtime 20ms ./internal/compression/...
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage.out
