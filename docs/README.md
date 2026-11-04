@@ -18,6 +18,7 @@ flowchart TD
 
 | Guide | What you will find |
 |---|---|
+| [Image, video and raw import](importing.md) | Input directories, formats, conversion options, storage and inspection |
 | [Configuration](configuration.md) | Every daemon setting, raw descriptors, memory sizing |
 | [Operations](operations.md) | Local replay, systemd, permissions, recovery, container access |
 | [Architecture](architecture.md) | Boundaries, ownership, persistence and shutdown diagrams |

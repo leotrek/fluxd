@@ -3,6 +3,14 @@
 /fluxd
 /fluxctl
 /fluxbench
+/fluximport
+/data/input/images/*
+!/data/input/images/.gitkeep
+/data/input/videos/*
+!/data/input/videos/.gitkeep
+/data/input/raw/*
+!/data/input/raw/.gitkeep
+/data/state/
 /bin/
 /.gocache/
 /.gomodcache/
@@ -23,6 +31,7 @@
 /optical.raw
 /optical.json
 /thermal.raw
+data/
 /thermal.json
 /fluxd-state/
 /fluxd.sock

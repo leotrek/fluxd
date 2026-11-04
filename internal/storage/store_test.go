@@ -43,6 +43,9 @@ func TestPersistenceRecovery(t *testing.T) {
 		t.Fatal("corruption")
 	}
 	os.Mkdir(filepath.Join(root, "tmp", "interrupted"), 0700)
+	if e = os.WriteFile(filepath.Join(root, "acquisitions", ".DS_Store"), []byte("Finder metadata"), 0600); e != nil {
+		t.Fatal(e)
+	}
 	s, e = Open(root, 1<<20)
 	if e != nil || len(s.List()) != 1 {
 		t.Fatal(e)

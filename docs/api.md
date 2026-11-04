@@ -77,6 +77,7 @@ sequenceDiagram
 | Group | Fields / meaning |
 |---|---|
 | Identity | `schema_version=1`, `acquisition_id`, `sensor_type`, RFC3339 `timestamp` |
+| Import provenance (optional) | `source`: `kind`, `path`, `pixel_format`, optional zero-based `frame_index`; imported media timestamps are source file modification times, not video presentation times |
 | Geometry | `width`, `height`, `bands` |
 | Samples | `sample_bit_depth`, `storage_bit_depth`, `sample_type`, `byte_order`, `layout` |
 | Codec | `compression.codec`, `mode`; optional `standard`, `profile` |

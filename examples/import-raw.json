@@ -1,0 +1,4 @@
+{
+  "listen_socket": "./fluxd.sock",
+  "state_dir": "./data/state/raw"
+}

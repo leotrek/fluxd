@@ -19,6 +19,7 @@ type Compression struct {
 
 // Record describes physical storage and effective sample precision.
 type Record struct {
+	Source            *Source     `json:"source,omitempty"`
 	SchemaVersion     int         `json:"schema_version"`
 	ID                string      `json:"acquisition_id"`
 	SensorType        string      `json:"sensor_type"`
@@ -37,6 +38,16 @@ type Record struct {
 	Checksum          string      `json:"checksum"`
 	RawChecksum       string      `json:"raw_checksum"`
 	Status            string      `json:"status"`
+}
+
+// Source records importer provenance. FrameIndex is zero-based; timestamps on
+// imported media describe source file modification time, not presentation time.
+type Source struct {
+	Kind        string `json:"kind"`
+	Path        string `json:"path"`
+	PixelFormat string `json:"pixel_format"`
+	FrameIndex  *int64 `json:"frame_index,omitempty"`
+	RGBPath     string `json:"rgb_path,omitempty"`
 }
 
 var idPattern = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$`)

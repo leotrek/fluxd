@@ -1,94 +1,83 @@
 # fluxd
 
-**Raw Earth Observation data → lossless encoding → durable local storage → local applications.**
+fluxd compresses sensor data, stores it on local disk, and serves it to applications through a Unix socket. It runs offline.
 
-A lightweight, offline Go daemon for optical, thermal, multispectral and hyperspectral acquisitions. Pure Go · bounded memory · Unix socket API · no runtime services.
+## Where is the storage?
 
-```mermaid
-flowchart LR
-    A[Recorded sensor data] --> B[File replay]
-    subgraph fluxd[fluxd · one device]
-        B --> C[Streaming codec]
-        C --> D[Atomic local store]
-        D --> E[Unix socket API]
-    end
-    E --> F[Native application]
-    E --> G[Containerized application]
-    classDef data fill:#e0f2fe,stroke:#0284c7,color:#0c4a6e
-    classDef core fill:#dcfce7,stroke:#16a34a,color:#14532d
-    class A,F,G data
-    class B,C,D,E core
+**Data is stored in ordinary folders on the machine running fluxd.** There is no external database or cloud storage.
+
+| How you add data | Default storage folder |
+|---|---|
+| Daemon / example replay | `./fluxd-state/` |
+| Image import | `./data/state/image/` |
+| Video import | `./data/state/video/` |
+| Raw import | `./data/state/raw/` |
+
+Paths starting with `./` are relative to **the directory where you run the command**, not the configuration file. Running from this repository puts these folders inside it.
+
+Each stored acquisition has two files:
+
+```text
+<storage-folder>/acquisitions/<id>/
+├── payload          # compressed samples
+└── metadata.json    # dimensions, codec, sizes and checksums
 ```
 
-> **CCSDS status:** the native B-1 subset passes local tests and 60 predictor/entropy reference fixtures. Full-file decoder interoperability is **not verified**. No general CCSDS compliance or flight qualification is claimed. [Compatibility matrix →](docs/ccsds.md)
+Change the daemon's folder with `"state_dir": "/path/to/storage"` in its JSON config. For imports, use `-state-dir /path/to/storage`. To serve imported data, the daemon's `state_dir` must point to that same folder. `fluxd.sock` is the API connection, not the data store.
 
-## Run in three steps
+## Build and run
 
-Requires Go; CI uses 1.26, with a source language floor of 1.24. No third-party Go modules, CGO or external compression runtime.
+Requires Go 1.24 or newer.
+
+Run from the repository root:
 
 ```sh
-# 1. Build and generate small optical/thermal replay fixtures.
 make build
 go run ./examples
-
-# 2. Start the foreground daemon.
 ./bin/fluxd -config examples/config.json
+```
 
-# 3. In another terminal, inspect stored acquisitions.
-./bin/fluxctl -socket ./fluxd.sock
+This imports the generated optical sample into `./fluxd-state/` and keeps the daemon running. In another terminal:
+
+```sh
+./bin/fluxctl -op ListAcquisitions
 ./bin/fluxctl -op GetAcquisition -id optical-0001
 ```
 
-Stop with **Ctrl+C** or **SIGTERM**. The example replays one optical file; select `thermal.raw` / `thermal.json` for thermal data. Restart with a new stable ID for another acquisition. Existing IDs are skipped.
+Stop with **Ctrl+C**. Stored data survives restarts; existing acquisition IDs are skipped. `fluxctl` displays metadata; applications retrieve and decode payloads through the [local API](docs/api.md).
 
-## Three commands, three jobs
+## Import your own files
 
-| Command | Purpose | Needed on the device? |
-|---|---|---|
-| `fluxd` | Ingest, compress, store and serve | **Yes** |
-| `fluxctl` | List acquisitions, inspect metadata, check status | Optional |
-| `fluxbench` | Measure throughput, ratio and resource usage | Development only |
-
-Application consumers live in downstream projects. They receive compressed streams and must decompress and verify them before processing the restored samples. fluxd does not launch containers, schedule workloads or require cloud connectivity. Development reconstruction clients are provided in transport tests and `dev/consumer`; no production consumer is shipped.
-
-## Capabilities at a glance
-
-| Data | Storage & access | Compression |
-|---|---|---|
-| 8/10/12/14/16-bit integer precision | Atomic publication; SHA-256 checks | Native CCSDS 123.0-B-1 subset |
-| Signed/unsigned; 8/16-bit containers | Restart recovery; capacity limits | Reduced P=0 column predictor |
-| BSQ/BIL/BIP; explicit byte order | Bounded binary streams over Unix sockets | Sample-adaptive, lossless |
-
-Packed 10/12/14-bit containers, physical sensor drivers, spectral/full prediction and block-adaptive coding are unsupported. `deflate` and `identity` remain explicit development/legacy codecs.
-
-## Platform targets
-
-| Device | Linux build | Validation |
-|---|---|---|
-| x86-64 development machine | `amd64` | Cross-build passes |
-| Raspberry Pi 3, 32-bit OS | `arm`, `GOARM=7` | Cross-build passes |
-| Pi 3/5, 64-bit OS; Jetson CPU | `arm64` | Cross-build passes |
-
-Tests and recorded benchmarks ran on **macOS ARM64 / Apple M3**. Raspberry Pi/Jetson execution and performance are not yet measured.
-
-## Explore the docs
-
-[Latest baseline audit and measurements](benchmarks/baseline-2026-10-24/README.md): file-pipeline reconstruction verified; independent full-file CCSDS and containerd execution remain unverified.
-
-| I want to… | Guide |
-|---|---|
-| Watch the pipeline in motion | [Standalone interactive explainer](docs/fluxd-explainer.html) |
-| Understand the data flow and recovery | [Architecture](docs/architecture.md) |
-| Configure replay, memory and disk limits | [Configuration](docs/configuration.md) |
-| Run under systemd or diagnose startup | [Operations](docs/operations.md) |
-| Build an external data consumer | [Local API](docs/api.md) |
-| Inspect codec support and validation | [CCSDS codec](docs/ccsds.md) |
-| Test, benchmark or extend fluxd | [Development](docs/development.md) · [Benchmarks](docs/benchmarks.md) |
-| Check measured results and open gaps | [Verification](docs/verification.md) |
+Stop any daemon using the destination store before importing. Source files are left in place.
 
 ```sh
-make lint test test-race test-cover cross
-make benchmark
+# PNG/JPEG → ./data/state/image/
+./bin/fluximport -kind image -input ./data/input/images
+
+# Video frames → ./data/state/video/ (requires ffmpeg and ffprobe)
+./bin/fluximport -kind video -input ./data/input/videos -max-frames 10
+
+# Headerless .raw files with matching .json descriptors → ./data/state/raw/
+./bin/fluximport -kind raw -input ./data/input/raw
 ```
 
-[Documentation index →](docs/README.md)
+You can use any file or directory with `-input`. Video imports also save uncompressed `frame.rgb` files beside each payload; results include `source.rgb_path` and the original video in `source.path`. These extra files use additional disk space outside the compressed storage limit. Re-run an import to add RGB files to existing video acquisitions.
+
+Image/video imports default to RGB8 samples; compression preserves those samples, not the original media file. Video imports store frames without audio or timing. See [import options and supported formats](docs/importing.md) for precision, alpha, raw descriptors and limits.
+
+To serve imported images:
+
+```sh
+./bin/fluxd -config examples/import-images.json
+```
+
+Use `examples/import-videos.json` or `examples/import-raw.json` for the other stores. Run one example daemon at a time; they share `./fluxd.sock`.
+
+## More information
+
+- [Configuration](docs/configuration.md): storage, replay and resource limits.
+- [Operations](docs/operations.md): installation, systemd and troubleshooting.
+- [Local API](docs/api.md): connecting an application and retrieving data.
+- [Documentation index](docs/README.md): architecture, development and benchmarks.
+
+The default codec is a lossless CCSDS 123.0-B-1 subset. Full-file interoperability with independent decoders is not verified; see [codec support and validation](docs/ccsds.md).

@@ -12,6 +12,7 @@ jobs:
           go-version: '1.26.x'
           cache: false
       - run: go mod download && go mod verify
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
       - run: make build lint test test-race test-cover cross
       - run: go test ./internal/metadata -run '^$' -fuzz FuzzMetadata -fuzztime 5s
       - run: go test ./internal/transport -run '^$' -fuzz FuzzFrame -fuzztime 5s

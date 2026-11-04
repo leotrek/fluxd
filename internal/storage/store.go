@@ -67,8 +67,12 @@ func Open(root string, limit int64) (*Store, error) {
 		return nil, e
 	}
 	for _, v := range entries {
+		// Finder adds this bookkeeping file when users browse the store.
+		if v.Name() == ".DS_Store" && v.Type().IsRegular() {
+			continue
+		}
 		if !v.IsDir() || !metadata.ValidID(v.Name()) {
-			return nil, fmt.Errorf("invalid stored entry")
+			return nil, fmt.Errorf("invalid stored entry %q", v.Name())
 		}
 		f, e := os.Open(filepath.Join(root, "acquisitions", v.Name(), "metadata.json"))
 		if e != nil {
@@ -203,6 +207,15 @@ func (s *Store) Put(ctx context.Context, m metadata.Record, r io.Reader, c compr
 		return e
 	}
 	defer f.Close()
+	var rgb *os.File
+	if m.Source != nil && m.Source.Kind == "video" && m.Source.RGBPath != "" {
+		rgb, e = os.OpenFile(filepath.Join(dir, "frame.rgb"), os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0600)
+		if e != nil {
+			return e
+		}
+		defer rgb.Close()
+		r = io.TeeReader(r, rgb)
+	}
 	h := sha256.New()
 	raw := sha256.New()
 	w := &limitedWriter{w: io.MultiWriter(f, h), remaining: s.limit - used}
@@ -221,6 +234,14 @@ func (s *Store) Put(ctx context.Context, m metadata.Record, r io.Reader, c compr
 	}
 	if e = f.Close(); e != nil {
 		return e
+	}
+	if rgb != nil {
+		if e = rgb.Sync(); e != nil {
+			return e
+		}
+		if e = rgb.Close(); e != nil {
+			return e
+		}
 	}
 	m.UncompressedBytes = n
 	m.CompressedBytes = w.n

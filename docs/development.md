@@ -5,9 +5,10 @@
 ## Find the code
 
 ```text
-cmd/                         shipped commands: fluxd, fluxctl, fluxbench
+cmd/                         shipped commands: fluxd, fluxctl, fluximport, fluxbench
 internal/
 ├── acquisition/             context-aware raw file replay
+├── importer/                offline image/video/raw adapters; FFmpeg subprocess lifecycle
 ├── compression/
 │   └── ccsds123/             native codec and component tests
 ├── storage/                 atomic filesystem store
@@ -21,9 +22,11 @@ packaging/systemd/           unprivileged service unit
 
 ## Everyday commands
 
+The [import tutorial](../README.md#import-images-videos-and-raw-data) covers the separate input folders, conversion options and serving configurations. Importer tests reconstruct stored samples to check RGB, alpha and 16-bit grayscale fidelity, batch selection, raw descriptors, cancellation and exclusive store access. Video integration tests run when FFmpeg and FFprobe are on PATH; otherwise they explicitly skip.
+
 | Command | Purpose |
 |---|---|
-| `make build` | Build the three commands |
+| `make build` | Build fluxd, fluxctl, fluximport and fluxbench |
 | `make fmt` / `make lint` | Format / fail on formatting or vet findings |
 | `make test` / `make test-race` | Unit/integration / race checks |
 | `make test-cover` | Produce `coverage.out` |

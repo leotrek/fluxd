@@ -3,6 +3,7 @@ build:
 	mkdir -p bin
 	go build -trimpath -o bin/fluxd ./cmd/fluxd
 	go build -trimpath -o bin/fluxctl ./cmd/fluxctl
+	go build -trimpath -o bin/fluximport ./cmd/fluximport
 	go build -trimpath -o bin/fluxbench ./cmd/fluxbench
 test:
 	go test ./...
