@@ -42,6 +42,14 @@ Each request and response below is carried in a control frame.
 
 `ready` in GetStatus describes the control service, not completion of ongoing replay. Offset/limit must be nonnegative; limit 0 selects the default. Zero-valued optional response fields may be omitted, including an empty records page. Known fields irrelevant to an operation are currently ignored.
 
+## Service responsibilities
+
+Fluxd owns acquisition ingestion, compression, storage and serving compressed
+payloads. Consumers such as orbitald own their socket clients, decompression,
+checksum verification and staging for execution. Services communicate through
+this wire protocol and the documented compression formats; orbitald does not
+import fluxd Go packages or require its source checkout to build.
+
 ## Read one acquisition
 
 `OpenAcquisition` returns the stored compressed stream. The consumer must decompress it using `compression.codec` and its declared standard/profile before interpreting sample values. Verify the encoded SHA-256 while receiving, then verify the reconstructed byte count and raw SHA-256 before using the data. `deflate` uses a zlib-wrapped stream; `identity` passes raw bytes through unchanged.
