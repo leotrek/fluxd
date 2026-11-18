@@ -29,3 +29,10 @@ cross:
 	CGO_ENABLED=0 GOOS=linux GOARCH=arm GOARM=7 go build -o bin/linux-armv7/ ./cmd/...
 clean:
 	rm -rf bin coverage.out benchmark.jsonl
+
+DESTDIR ?=
+export DESTDIR
+.PHONY: install install-system
+install: build install-system
+install-system:
+	sh scripts/install.sh

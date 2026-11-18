@@ -81,3 +81,32 @@ Use `examples/import-videos.json` or `examples/import-raw.json` for the other st
 - [Documentation index](docs/README.md): architecture, development and benchmarks.
 
 The default codec is a lossless CCSDS 123.0-B-1 subset. Full-file interoperability with independent decoders is not verified; see [codec support and validation](docs/ccsds.md).
+
+## Independent Linux service installation
+
+Run these commands from the Fluxd Git checkout; they build only Fluxd and its
+CLIs (`fluxctl`, `fluximport`, `fluxbench`):
+
+```sh
+make build
+sudo make install-system
+```
+
+`make install` combines both steps. The installer creates the dedicated `fluxd`
+system account, installs binaries in `/usr/local/bin`, installs the service in
+`/etc/systemd/system`, and preserves existing `/etc/fluxd/config.json` (new defaults
+are saved as `.example`). It reloads systemd but does not start services.
+Edit that JSON to configure acquisition ingestion, then:
+
+```sh
+sudo systemctl enable --now fluxd
+sudo journalctl -u fluxd -n 100 --no-pager
+```
+
+Default socket: `/run/fluxd/fluxd.sock`; state: `/var/lib/fluxd`.
+Orbitald and relayd are installed independently from their own repositories.
+When running all three, relayd reads Fluxd's socket and orbitald reads relayd's
+`/run/relayd/inputs.sock`. Without relayd, orbitald reads Fluxd directly.
+Use `make install-system DESTDIR=/tmp/fluxd-package` for staging without root,
+account creation, or systemd changes. Live installation requires Linux, root,
+and standard `getent`, `groupadd`, `useradd`, and systemd tools.

@@ -1,0 +1,6 @@
+{
+  "listen_socket": "/run/fluxd/fluxd.sock",
+  "state_dir": "/var/lib/fluxd",
+  "log_level": "info",
+  "backend": "ccsds-123"
+}
